@@ -26,7 +26,7 @@ router.post('/', async (req, res) => {
       }
   }
 
-  const { answers, totalScore, aggressionLevel } = req.body;
+  const { answers, totalScore, aggressionLevel, age, dimensionScores, interpretationText, recommendations } = req.body;
   
   if (!answers || answers.length !== 50) {
       return res.status(400).json({ message: 'Invalid answers format. Must be 50 questions.' });
@@ -35,9 +35,13 @@ router.post('/', async (req, res) => {
   try {
     const assessment = await Assessment.create({
       userId: user ? user.id : null,
+      age,
       answers,
       totalScore,
       aggressionLevel,
+      dimensionScores,
+      interpretationText,
+      recommendations
     });
 
     // Append to Google Sheet

@@ -16,9 +16,13 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS assessments (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  age INTEGER,
   answers INTEGER[] NOT NULL,
   total_score INTEGER NOT NULL,
   aggression_level VARCHAR(50) NOT NULL,
+  dimension_scores JSONB,
+  interpretation_text TEXT,
+  recommendations TEXT[],
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

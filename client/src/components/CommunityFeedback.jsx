@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from '../api/axios';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Quote, MessageSquare } from 'lucide-react';
+import { Quote, MessageSquare, TrendingUp } from 'lucide-react';
 
 const CommunityFeedback = () => {
   const [stats, setStats] = useState(null);
@@ -17,15 +16,15 @@ const CommunityFeedback = () => {
         // Seed data if empty so it looks nice on first visit
         if (storedFeedbacks.length === 0) {
           storedFeedbacks = [
-            { _id: '1', anonymousName: 'مجهول 1', totalScore: 135, aggressionLevel: 'Critical', feedbackText: 'التقييم ساعدني جداً في فهم حالة ابني. شكراً لكم.', createdAt: new Date().toISOString() },
-            { _id: '2', anonymousName: 'مجهول 2', totalScore: 85, aggressionLevel: 'High', feedbackText: 'نصائح مفيدة جداً سأبدأ بتطبيقها فوراً.', createdAt: new Date().toISOString() },
-            { _id: '3', anonymousName: 'مجهول 3', totalScore: 45, aggressionLevel: 'Medium', feedbackText: 'الموقع سهل الاستخدام والأسئلة دقيقة.', createdAt: new Date().toISOString() }
+            { _id: '1', anonymousName: 'مجهول 1', totalScore: 135, aggressionLevel: 'High Concerning', feedbackText: 'التقييم ساعدني جداً في فهم حالة ابني. شكراً لكم.', createdAt: new Date().toISOString(), answers: Array(50).fill(2) },
+            { _id: '2', anonymousName: 'مجهول 2', totalScore: 85, aggressionLevel: 'Developmentally Normal', feedbackText: 'نصائح مفيدة جداً سأبدأ بتطبيقها فوراً.', createdAt: new Date().toISOString(), answers: Array(50).fill(1) },
+            { _id: '3', anonymousName: 'مجهول 3', totalScore: 45, aggressionLevel: 'Very Normal', feedbackText: 'الموقع سهل الاستخدام والأسئلة دقيقة.', createdAt: new Date().toISOString(), answers: Array(50).fill(1) }
           ];
           localStorage.setItem('site_feedbacks', JSON.stringify(storedFeedbacks));
         }
 
         // Calculate Stats
-        const counts = { Low: 0, Medium: 0, High: 0, Critical: 0 };
+        const counts = { 'Very Normal': 0, 'Developmentally Normal': 0, 'Moderate': 0, 'High Concerning': 0, 'Severe': 0 };
         storedFeedbacks.forEach(f => {
             if (counts[f.aggressionLevel] !== undefined) counts[f.aggressionLevel]++;
         });
@@ -47,12 +46,22 @@ const CommunityFeedback = () => {
 
   const prepareChartData = () => {
     if (!stats?.stats) return [];
-    // Convert backend Aggression Levels to Arabic Labels and standardize data structure
-    const levelMap = { 'Low': 'منخفض', 'Medium': 'متوسط', 'High': 'مرتفع', 'Critical': 'خطير' };
-    const colorMap = { 'Low': '#10b981', 'Medium': '#d97706', 'High': '#ea580c', 'Critical': '#dc2626' };
+    const levelMap = { 
+        'Very Normal': 'طبيعي جداً', 
+        'Developmentally Normal': 'طبيعي نمو', 
+        'Moderate': 'متوسط', 
+        'High Concerning': 'مرتفع', 
+        'Severe': 'شديد' 
+    };
+    const colorMap = { 
+        'Very Normal': '#22c55e', 
+        'Developmentally Normal': '#eab308', 
+        'Moderate': '#f97316', 
+        'High Concerning': '#ef4444', 
+        'Severe': '#000000' 
+    };
     
-    // Ensure all levels exist even if count is 0
-    return ['Low', 'Medium', 'High', 'Critical'].map(level => {
+    return ['Very Normal', 'Developmentally Normal', 'Moderate', 'High Concerning', 'Severe'].map(level => {
         const found = stats.stats.find(s => s._id === level);
         return {
             name: levelMap[level],
@@ -64,100 +73,135 @@ const CommunityFeedback = () => {
 
   const chartData = prepareChartData();
 
-  if (loading) return <div className="py-20 text-center"><p className="text-slate-500">جاري تحميل بيانات المجتمع...</p></div>;
+  const getBadgeStyles = (level) => {
+    switch(level) {
+        case 'Severe': return 'bg-slate-900 text-white';
+        case 'High Concerning': return 'bg-red-100 text-red-700';
+        case 'Moderate': return 'bg-orange-100 text-orange-700';
+        case 'Developmentally Normal': return 'bg-yellow-100 text-yellow-700';
+        default: return 'bg-green-100 text-green-700';
+    }
+  };
+
+  const getLevelLabel = (level) => {
+    const map = { 
+        'Very Normal': 'طبيعي جداً', 
+        'Developmentally Normal': 'طبيعي نمو', 
+        'Moderate': 'متوسط', 
+        'High Concerning': 'مرتفع', 
+        'Severe': 'شديد' 
+    };
+    return map[level] || level;
+  };
+
+  if (loading) return <div className="py-20 text-center"><p className="text-slate-500 font-bold">جاري تحميل بيانات المجتمع...</p></div>;
 
   return (
-    <div className="bg-slate-50 border-t border-slate-100">
-        
-        {/* Stats Section */}
-        <section className="py-16">
+    <div className="bg-slate-50 border-t border-slate-100" id="community">
+        <section className="py-20">
             <div className="container mx-auto px-4">
-                <h2 className="text-3xl font-bold text-center text-slate-800 mb-4">نتائج المجتمع</h2>
-                <p className="text-center text-slate-600 mb-12 max-w-2xl mx-auto">
-                    إحصائيات عامة حول مستويات العدوانية لدى الأطفال بناءً على تقييمات المشاركين.
-                </p>
+                <div className="text-center mb-16">
+                    <h2 className="text-4xl font-black text-slate-800 mb-4 tracking-tight">إحصائيات المجتمع</h2>
+                    <p className="text-slate-500 font-medium max-w-2xl mx-auto">
+                        تحليل حي للبيانات المجمعة من مئات التقييمات السابقة، لمساعدتك في فهم توزيع السلوك العدواني.
+                    </p>
+                </div>
 
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 max-w-4xl mx-auto">
-                    <div className="text-center mb-8">
-                        <span className="text-5xl font-bold text-primary block mb-2">{stats?.totalCount || 0}</span>
-                        <span className="text-slate-500 font-medium">مجموع التقييمات</span>
+                <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                    {/* Main Counter */}
+                    <div className="lg:col-span-1 bg-white p-10 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 text-center flex flex-col justify-center">
+                        <div className="inline-flex items-center justify-center p-4 bg-primary/10 rounded-2xl mb-6 mx-auto">
+                            <TrendingUp className="text-primary w-8 h-8" />
+                        </div>
+                        <span className="text-6xl font-black text-slate-900 block mb-2">{stats?.totalCount || 0}</span>
+                        <span className="text-slate-400 font-bold uppercase tracking-widest text-xs">إجمالي التقييمات العلمية</span>
                     </div>
                     
-                    <div className="h-64 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData}>
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                                <YAxis hide />
-                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                                    {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+                    {/* Chart */}
+                    <div className="lg:col-span-2 bg-white p-10 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                        <h3 className="text-lg font-bold text-slate-800 mb-8 border-r-4 border-primary pr-4">توزيع مستويات العدوانية</h3>
+                        <div className="h-64 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={chartData}>
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 'bold', fill: '#94a3b8' }} />
+                                    <YAxis hide />
+                                    <Tooltip 
+                                        cursor={{ fill: '#f8fafc' }} 
+                                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }} 
+                                    />
+                                    <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={50}>
+                                        {chartData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        {/* Testimonials Section */}
+        {/* Feedbacks */}
         {feedbacks.length > 0 && (
-            <section className="py-16 bg-white">
+            <section className="py-20 bg-white">
                 <div className="container mx-auto px-4">
-                    <h2 className="text-3xl font-bold text-center text-slate-800 mb-12 flex items-center justify-center gap-2">
-                        <MessageSquare className="text-primary" />
-                        <span>تجارب وآراء أولياء الأمور</span>
-                    </h2>
+                    <div className="flex items-center justify-center gap-4 mb-16">
+                        <div className="h-px bg-slate-200 flex-1 max-w-xs"></div>
+                        <h2 className="text-3xl font-black text-slate-800 flex items-center gap-3">
+                            <MessageSquare className="text-primary w-8 h-8" />
+                            <span>تجارب أولياء الأمور</span>
+                        </h2>
+                        <div className="h-px bg-slate-200 flex-1 max-w-xs"></div>
+                    </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {feedbacks.map((fb) => (
-                            <div key={fb._id} className="bg-slate-50 p-6 rounded-xl border border-slate-100 hover:shadow-md transition duration-300 relative group">
-                                <Quote className="absolute top-4 left-4 text-slate-200 w-8 h-8 group-hover:text-primary/20 transition" />
-                                <div className="mb-4">
-                                    <h4 className="font-bold text-slate-800">{fb.anonymousName}</h4>
-                                    <div className="flex items-center gap-2 mt-1 text-xs">
-                                        <span className={`px-2 py-0.5 rounded-full ${
-                                            fb.aggressionLevel === 'Critical' ? 'bg-red-100 text-red-700' :
-                                            fb.aggressionLevel === 'High' ? 'bg-orange-100 text-orange-700' :
-                                            fb.aggressionLevel === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                                            'bg-green-100 text-green-700'
-                                        }`}>
-                                            {fb.aggressionLevel === 'Critical' ? 'خطير' : fb.aggressionLevel === 'High' ? 'مرتفع' : fb.aggressionLevel === 'Medium' ? 'متوسط' : 'منخفض'}
-                                        </span>
-                                        <span className="text-slate-400 font-semibold px-2">
-                                            النقطة: {fb.totalScore}
-                                        </span>
-                                        <span className="text-slate-400">•</span>
-                                        <span className="text-slate-500 font-mono ltr">{new Date(fb.createdAt).toLocaleDateString('en-GB')}</span>
-                                    </div>
-                                </div>
-                                <p className="text-slate-600 leading-relaxed text-sm mb-4">
-                                    "{fb.feedbackText}"
-                                </p>
-                                
-                                {fb.answers && (
-                                    <div className="mt-4 pt-4 border-t border-slate-200">
-                                        <h5 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">الإجابات (50 سؤالاً):</h5>
-                                        <div className="grid grid-cols-10 gap-1">
-                                            {fb.answers.map((ans, idx) => (
-                                                <div 
-                                                    key={idx} 
-                                                    title={`سؤال ${idx + 1}`}
-                                                    className={`w-full aspect-square flex items-center justify-center text-[8px] font-bold rounded ${
-                                                        ans === 4 ? 'bg-red-500 text-white' :
-                                                        ans === 3 ? 'bg-orange-400 text-white' :
-                                                        ans === 2 ? 'bg-yellow-400 text-slate-800' :
-                                                        ans === 1 ? 'bg-green-300 text-slate-700' :
-                                                        'bg-slate-200 text-slate-500'
-                                                    }`}
-                                                >
-                                                    {ans}
-                                                </div>
-                                            ))}
+                            <div key={fb._id} className="bg-slate-50 p-8 rounded-3xl border border-slate-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative group overflow-hidden">
+                                <Quote className="absolute -top-2 -left-2 text-slate-200 w-16 h-16 group-hover:text-primary/10 transition rotate-12" />
+                                <div className="relative z-10">
+                                    <div className="mb-6">
+                                        <h4 className="font-black text-slate-900 text-lg mb-2">{fb.anonymousName}</h4>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${getBadgeStyles(fb.aggressionLevel)}`}>
+                                                {getLevelLabel(fb.aggressionLevel)}
+                                            </span>
+                                            <span className="text-slate-800 font-black text-[10px] bg-slate-200 px-2 py-1 rounded-full">
+                                                {fb.totalScore} نقطة
+                                            </span>
+                                            <span className="text-slate-300">•</span>
+                                            <span className="text-slate-400 font-bold text-[10px] uppercase">{new Date(fb.createdAt).toLocaleDateString('en-GB')}</span>
                                         </div>
                                     </div>
-                                )}
+                                    <p className="text-slate-600 leading-relaxed font-medium text-sm italic mb-6">
+                                        "{fb.feedbackText}"
+                                    </p>
+                                    
+                                    {fb.answers && (
+                                        <div className="mt-6 pt-6 border-t border-slate-200">
+                                            <div className="flex justify-between items-center mb-3">
+                                                 <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">خريطة الاستجابات السلوكية</h5>
+                                                 <span className="text-[9px] font-bold text-slate-300">50 اختبار</span>
+                                            </div>
+                                            <div className="grid grid-cols-10 gap-1">
+                                                {fb.answers.map((ans, idx) => (
+                                                    <div 
+                                                        key={idx} 
+                                                        className={`w-full aspect-square flex items-center justify-center text-[7px] font-black rounded-sm shadow-sm ${
+                                                            ans === 4 ? 'bg-red-500 text-white' :
+                                                            ans === 3 ? 'bg-orange-400 text-white' :
+                                                            ans === 2 ? 'bg-yellow-400 text-slate-800' :
+                                                            ans === 1 ? 'bg-green-300 text-slate-700' :
+                                                            'bg-slate-100 text-slate-300'
+                                                        }`}
+                                                    >
+                                                        {ans}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>

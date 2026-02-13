@@ -1,13 +1,13 @@
 const { query } = require('../config/db');
 
 class Assessment {
-  static async create({ userId, answers, totalScore, aggressionLevel }) {
+  static async create({ userId, age, answers, totalScore, aggressionLevel, dimensionScores, interpretationText, recommendations }) {
     const text = `
-      INSERT INTO assessments (user_id, answers, total_score, aggression_level)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO assessments (user_id, age, answers, total_score, aggression_level, dimension_scores, interpretation_text, recommendations)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `;
-    const values = [userId, answers, totalScore, aggressionLevel];
+    const values = [userId, age, answers, totalScore, aggressionLevel, JSON.stringify(dimensionScores), interpretationText, recommendations];
     const res = await query(text, values);
     return res.rows[0];
   }
