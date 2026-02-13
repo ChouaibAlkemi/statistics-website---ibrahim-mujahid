@@ -1,0 +1,13 @@
+{
+  "name": "child-aggression-system-root",
+  "version": "1.0.0",
+  "description": "Root package for Netlify Functions dependencies",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "googleapis": "^144.0.0",
+    "pg": "^8.13.1"
+  }
+}
