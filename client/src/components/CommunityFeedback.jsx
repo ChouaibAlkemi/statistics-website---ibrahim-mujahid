@@ -9,22 +9,40 @@ const CommunityFeedback = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchLocalData = () => {
+      setLoading(true);
       try {
-        const [statsRes, feedbackRes] = await Promise.all([
-          axios.get('/feedback/stats'),
-          axios.get('/feedback/public')
-        ]);
-        setStats(statsRes.data);
-        setFeedbacks(feedbackRes.data);
+        let storedFeedbacks = JSON.parse(localStorage.getItem('site_feedbacks') || '[]');
+        
+        // Seed data if empty so it looks nice on first visit
+        if (storedFeedbacks.length === 0) {
+          storedFeedbacks = [
+            { _id: '1', anonymousName: 'مجهول 1', totalScore: 135, aggressionLevel: 'Critical', feedbackText: 'التقييم ساعدني جداً في فهم حالة ابني. شكراً لكم.', createdAt: new Date().toISOString() },
+            { _id: '2', anonymousName: 'مجهول 2', totalScore: 85, aggressionLevel: 'High', feedbackText: 'نصائح مفيدة جداً سأبدأ بتطبيقها فوراً.', createdAt: new Date().toISOString() },
+            { _id: '3', anonymousName: 'مجهول 3', totalScore: 45, aggressionLevel: 'Medium', feedbackText: 'الموقع سهل الاستخدام والأسئلة دقيقة.', createdAt: new Date().toISOString() }
+          ];
+          localStorage.setItem('site_feedbacks', JSON.stringify(storedFeedbacks));
+        }
+
+        // Calculate Stats
+        const counts = { Low: 0, Medium: 0, High: 0, Critical: 0 };
+        storedFeedbacks.forEach(f => {
+            if (counts[f.aggressionLevel] !== undefined) counts[f.aggressionLevel]++;
+        });
+
+        setStats({
+          totalCount: storedFeedbacks.length,
+          stats: Object.keys(counts).map(key => ({ _id: key, count: counts[key] }))
+        });
+        setFeedbacks(storedFeedbacks);
       } catch (error) {
-        console.error('Error fetching community data:', error);
+        console.error('Error loading local data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchLocalData();
   }, []);
 
   const prepareChartData = () => {
@@ -114,9 +132,32 @@ const CommunityFeedback = () => {
                                         <span className="text-slate-500 font-mono ltr">{new Date(fb.createdAt).toLocaleDateString('en-GB')}</span>
                                     </div>
                                 </div>
-                                <p className="text-slate-600 leading-relaxed text-sm">
+                                <p className="text-slate-600 leading-relaxed text-sm mb-4">
                                     "{fb.feedbackText}"
                                 </p>
+                                
+                                {fb.answers && (
+                                    <div className="mt-4 pt-4 border-t border-slate-200">
+                                        <h5 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">الإجابات (50 سؤالاً):</h5>
+                                        <div className="grid grid-cols-10 gap-1">
+                                            {fb.answers.map((ans, idx) => (
+                                                <div 
+                                                    key={idx} 
+                                                    title={`سؤال ${idx + 1}`}
+                                                    className={`w-full aspect-square flex items-center justify-center text-[8px] font-bold rounded ${
+                                                        ans === 4 ? 'bg-red-500 text-white' :
+                                                        ans === 3 ? 'bg-orange-400 text-white' :
+                                                        ans === 2 ? 'bg-yellow-400 text-slate-800' :
+                                                        ans === 1 ? 'bg-green-300 text-slate-700' :
+                                                        'bg-slate-200 text-slate-500'
+                                                    }`}
+                                                >
+                                                    {ans}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>

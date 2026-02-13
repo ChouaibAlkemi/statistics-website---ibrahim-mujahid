@@ -11,23 +11,34 @@ const Results = () => {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleFeedbackSubmit = async (e) => {
+  const handleFeedbackSubmit = (e) => {
     e.preventDefault();
     if (!feedbackText.trim()) return;
 
     setLoading(true);
     try {
-      await axios.post('/feedback/submit', {
+      // Get existing feedbacks from localStorage
+      const existingFeedbacks = JSON.parse(localStorage.getItem('site_feedbacks') || '[]');
+      
+      const newFeedback = {
+        _id: Date.now().toString(),
+        anonymousName: `مجهول ${existingFeedbacks.length + 1}`,
         totalScore,
         aggressionLevel,
         feedbackText: feedbackText.trim(),
-        answers // Include user choices
-      });
+        answers,
+        createdAt: new Date().toISOString(),
+        approved: true // Auto-approve for local storage
+      };
+
+      // Save back to localStorage
+      localStorage.setItem('site_feedbacks', JSON.stringify([newFeedback, ...existingFeedbacks]));
+      
       setFeedbackSubmitted(true);
       setFeedbackText('');
     } catch (error) {
-      console.error('Error submitting feedback:', error);
-      alert('حدث خطأ أثناء إرسال التعليق. يرجى المحاولة لاحقاً.');
+      console.error('Error saving feedback:', error);
+      alert('حدث خطأ أثناء حفظ التعليق.');
     } finally {
       setLoading(false);
     }
