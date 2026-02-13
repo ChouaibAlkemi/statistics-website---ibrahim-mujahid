@@ -52,12 +52,12 @@ const Questionnaire = () => {
         aggressionLevel: level
       });
       
-      navigate('/results', { state: { totalScore, aggressionLevel: level } });
+      navigate('/results', { state: { totalScore, aggressionLevel: level, answers } });
     } catch (error) {
       console.error("Submission error", error);
         // Fallback to local results if API fails or user not logged in (and API requires auth)
         // But for this requirement we want to show results regardless
-        navigate('/results', { state: { totalScore, aggressionLevel: level } });
+        navigate('/results', { state: { totalScore, aggressionLevel: level, answers } });
     } finally {
         setLoading(false);
     }

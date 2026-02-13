@@ -5,7 +5,7 @@ import axios from '../api/axios';
 
 const Results = () => {
   const { state } = useLocation();
-  const { totalScore, aggressionLevel } = state || { totalScore: 0, aggressionLevel: 'Unknown' };
+  const { totalScore, aggressionLevel, answers } = state || { totalScore: 0, aggressionLevel: 'Unknown', answers: [] };
   
   const [feedbackText, setFeedbackText] = useState('');
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
@@ -20,7 +20,8 @@ const Results = () => {
       await axios.post('/feedback/submit', {
         totalScore,
         aggressionLevel,
-        feedbackText: feedbackText.trim()
+        feedbackText: feedbackText.trim(),
+        answers // Include user choices
       });
       setFeedbackSubmitted(true);
       setFeedbackText('');

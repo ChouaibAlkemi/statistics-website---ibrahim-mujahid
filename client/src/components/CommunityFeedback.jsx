@@ -107,6 +107,9 @@ const CommunityFeedback = () => {
                                         }`}>
                                             {fb.aggressionLevel === 'Critical' ? 'خطير' : fb.aggressionLevel === 'High' ? 'مرتفع' : fb.aggressionLevel === 'Medium' ? 'متوسط' : 'منخفض'}
                                         </span>
+                                        <span className="text-slate-400 font-semibold px-2">
+                                            النقطة: {fb.totalScore}
+                                        </span>
                                         <span className="text-slate-400">•</span>
                                         <span className="text-slate-500 font-mono ltr">{new Date(fb.createdAt).toLocaleDateString('en-GB')}</span>
                                     </div>

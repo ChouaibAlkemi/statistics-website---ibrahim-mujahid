@@ -1,37 +1,31 @@
-const mongoose = require('mongoose');
+const { query } = require('../config/db');
 const bcrypt = require('bcryptjs');
 
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  role: {
-    type: String,
-    enum: ['user', 'admin'],
-    default: 'user',
-  },
-}, { timestamps: true });
+class User {
+  static async findOne({ email }) {
+    const res = await query('SELECT * FROM users WHERE email = $1', [email]);
+    return res.rows[0];
+  }
 
-// Hash password before saving
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
-});
+  static async findById(id) {
+    const res = await query('SELECT * FROM users WHERE id = $1', [id]);
+    return res.rows[0];
+  }
 
-// Method to compare password
-userSchema.methods.matchPassword = async function(enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
-};
+  static async create({ name, email, password, role = 'user' }) {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-module.exports = mongoose.model('User', userSchema);
+    const res = await query(
+      'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING *',
+      [name, email, hashedPassword, role]
+    );
+    return res.rows[0];
+  }
+
+  static async matchPassword(enteredPassword, userPassword) {
+    return await bcrypt.compare(enteredPassword, userPassword);
+  }
+}
+
+module.exports = User;
