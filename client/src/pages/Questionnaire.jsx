@@ -36,7 +36,8 @@ const Questionnaire = () => {
 
   const handleSubmit = async () => {
     if (!answers.every(a => a !== null)) {
-      alert("الرجاء الإجابة على جميع الأسئلة");
+      const missing = answers.map((a, i) => a === null ? i + 1 : null).filter(n => n !== null);
+      alert(`الرجاء الإجابة على جميع الأسئلة. الأسئلة الناقصة هي: ${missing.join(', ')}`);
       return;
     }
 
@@ -131,7 +132,7 @@ const Questionnaire = () => {
             ) : (
                 <button 
                     onClick={handleSubmit}
-                    disabled={!String(answers.every(a => a !== null)) || loading}
+                    disabled={!answers.every(a => a !== null) || loading}
                     className="flex items-center px-8 py-3 bg-success text-white rounded-full font-bold shadow-lg hover:bg-green-600 disabled:opacity-50 transition-colors"
                 >
                     {loading ? 'جاري المعالجة...' : 'إنهاء وعرض النتائج'} <CheckCircle className="mr-2" />
